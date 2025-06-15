@@ -1,14 +1,16 @@
 import os
 os.makedirs("crawler", exist_ok=True)
 
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from classifier.rule_based_filter import is_valid_blog as rule_based_is_valid_blog
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 import time # used to pause the script(js to load)
 import json
 
-
-def is_valid_blog(article_text):
-    return article_text and len(article_text.split()) > 300
 
 def save_blog(data ,  i):
     with open(f"crawler/blog_{i}.json" , "w" , encoding="utf-8") as f:
@@ -28,7 +30,6 @@ def run():
         soup = BeautifulSoup(content, "html.parser")
 
         #extract blog post links from homepage
-        from bs4.element import Tag
         links = [
             str(a['href']) for a in soup.find_all('a', href=True)
             if isinstance(a, Tag) and isinstance(a['href'], (str, list)) and str(a['href']).startswith('https://towardsdatascience.com/')
@@ -60,19 +61,19 @@ def run():
 
                 date = date_tag["datetime"] if date_tag and isinstance(date_tag, Tag) and "datetime" in date_tag.attrs else "Unknown"
 
-                if is_valid_blog(content):
-                    blog_data = {
-                        "title" : title,
-                        "author" : author,
-                        "date" : date,
-                        "url" : link,
-                        "content" : content,
-                    }
-                    save_blog(blog_data , i)
-                    print(f"Saved blog {i+1}:{title}")
+                blog_data = {
+                    "title": title,
+                    "author": author,
+                    "date": date,
+                    "content": content,
+                    "url": link
+                }
 
+                if rule_based_is_valid_blog(blog_data):
+                    save_blog(blog_data, i)
+                    print(f"✅ Saved blog {i+1}: {title}")
                 else:
-                    print(f"Skipped blog {i+1} : not enough content")
+                    print(f"❌ Skipped blog {i+1}: not valid by rules")
 
             except Exception as e:
                 print(f"Error on blog {i+1}:{e}")
