@@ -15,7 +15,7 @@ def load_blogs(folder="crawler"):
 
 #extract text fields to index (e.g. ,title + content)
 def extract_documents(blogs):
-    return [f"{blog['title']}\n{blog['content']}" for blog in blogs]
+    return [f"{blog['title']} \n{blog['content']}" for blog in blogs]
 
 if __name__ == "__main__":
     blogs = load_blogs()
